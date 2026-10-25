@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+.env
+.env.*
+!.env.example
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+
+# Node / Client
+node_modules/
+client/dist/
+client/build/
+client/.next/
+
+# Flutter build outputs
+santori_flutter/build/
+santori_flutter/.dart_tool/
+santori_flutter/.flutter-plugins
+santori_flutter/.flutter-plugins-dependencies
+santori_flutter/.packages
+santori_flutter/pubspec.lock
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
