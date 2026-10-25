@@ -8,8 +8,8 @@ import '../models/playlist.dart';
 import '../models/track.dart';
 
 class ApiService {
-  static const String defaultProductionApiUrl = 'https://variations-mas-editing-opt.trycloudflare.com';
-  static const String defaultAndroidLocalUrl = 'http://192.168.214.139:8000';
+  static const String defaultProductionApiUrl = 'https://santori-music-api.onrender.com';
+  static const String defaultAndroidLocalUrl = 'http://10.0.2.2:8000'; // Android emulator localhost
   static const String _envBaseUrl = String.fromEnvironment('API_URL');
   static String? _customBaseUrl;
 
