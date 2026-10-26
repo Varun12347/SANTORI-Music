@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-desk: #b4b2ad;
+  --color-paper: #dedcd7;
+  --color-paper2: #d2d0ca;
+  --color-text: #25262a;
+  --color-muted: #55565a;
+  --color-rule: #b9bcc4;
+  --color-ink: #26365a;
+  --color-ink-shadow: #141c2e;
+  --color-stamp: #7a2c35;
+  --hover-tint: rgba(255, 255, 255, 0.33);
+  --grain-opacity: 0.35;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-desk);
+  color: var(--color-text);
+  font-family: 'Karla', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+}
+
+/* Fullscreen Paper Grain Overlay */
+.paper-grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  filter: url(#paper-grain);
+  mix-blend-mode: multiply;
+  opacity: var(--grain-opacity);
+  transition: opacity 0.25s ease;
+}
+
+/* Tactile Button Physics */
+.btn-tactile {
+  background-color: var(--color-ink);
+  color: var(--color-paper);
+  box-shadow: 0 2px 0 0 var(--color-ink-shadow);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.2s ease;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-tactile:hover {
+  filter: brightness(1.08);
+}
+
+.btn-tactile:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 0 transparent;
+}
+
+/* Round Tactile Player Button */
+.btn-round-tactile {
+  border-radius: 9999px;
+  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
+}
+
+.btn-round-tactile:active {
+  transform: scale(0.92);
+}
+
+/* Paper Sheet Layered Shadow */
+.paper-sheet {
+  background-color: var(--color-paper);
+  border-radius: 3px;
+  position: relative;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow:
+    0 4px 14px -3px rgba(0, 0, 0, 0.14),
+    0 1px 3px 0 rgba(0, 0, 0, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.08) inset;
+}
+
+/* Dark mode sheet styling */
+body.is-dark .paper-sheet {
+  box-shadow:
+    0 10px 25px -4px rgba(0, 0, 0, 0.55),
+    0 3px 8px -2px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.35) inset;
+}
+
+/* Ruled Notebook Sheet */
+.ruled-notebook {
+  background-color: var(--color-paper);
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 31px,
+    var(--color-rule) 31px,
+    var(--color-rule) 32px
+  );
+  position: relative;
+}
+
+.ruled-notebook::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 48px;
+  width: 2px;
+  background-color: rgba(220, 38, 38, 0.35);
+  pointer-events: none;
+}
+
+/* Polaroid Tape Strip */
+.polaroid-tape {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-1.5deg);
+  width: 76px;
+  height: 22px;
+  background: rgba(225, 225, 220, 0.65);
+  backdrop-filter: blur(2px);
+  border: 1px solid rgba(180, 180, 175, 0.4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+body.is-dark .polaroid-tape {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Rubber Stamp Liked Mark */
+.rubber-stamp {
+  border: 2px solid var(--color-stamp);
+  color: var(--color-stamp);
+  text-transform: uppercase;
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  transform: rotate(-7deg);
+  letter-spacing: 0.05em;
+  mask-image: radial-gradient(circle, black 70%, transparent 100%);
+  user-select: none;
+}
+
+/* Perforated Player Bar */
+.perforated-bar {
+  background-color: var(--color-paper);
+  border-top: 2px dashed var(--color-rule);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+    transform: none !important;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-rule);
+  border-radius: 3px;
+}

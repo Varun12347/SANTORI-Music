@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from .database import (
@@ -33,6 +34,7 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Pydantic Schemas
@@ -74,8 +76,18 @@ class PresetCreate(BaseModel):
 
 # Endpoints
 @app.get("/api/health")
-def health():
-    return {"status": "ok", "app": "SANTORI Music Server", "version": "1.0.0"}
+def health(db: Session = Depends(get_db)):
+    db_status = "ok"
+    try:
+        db.execute(text("SELECT 1"))
+    except Exception as e:
+        db_status = f"unhealthy: {e}"
+    return {
+        "status": "ok",
+        "app": "SANTORI Music Server",
+        "version": "1.0.0",
+        "database": db_status
+    }
 
 @app.get("/api/search", response_model=List[SongSchema])
 def search_tracks(

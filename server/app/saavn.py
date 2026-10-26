@@ -24,14 +24,17 @@ def decrypt_media_url(enc_url: str) -> Optional[str]:
         return None
 
 def clean_html(text: str) -> str:
-    """Removes HTML entities and tags from titles/lyrics."""
+    """Removes HTML entities and tags from titles/lyrics while preserving line breaks."""
     if not text:
         return ""
+    text = re.sub(r"<br\s*/?>", "\n", text, flags=re.IGNORECASE)
     text = re.sub(r"&quot;", '"', text)
     text = re.sub(r"&amp;", '&', text)
     text = re.sub(r"&#039;", "'", text)
     text = re.sub(r"&lt;", '<', text)
     text = re.sub(r"&gt;", '>', text)
+    text = re.sub(r"&nbsp;", ' ', text)
+    text = re.sub(r"<[^>]+>", '', text)
     return text.strip()
 
 def format_image_url(img_url: Optional[str]) -> str:

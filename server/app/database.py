@@ -79,7 +79,7 @@ class ListeningHistory(Base):
     artist = Column(String(255), nullable=False)
     album = Column(String(255), default="")
     image = Column(String(500), default="")
-    played_at = Column(DateTime, default=datetime.datetime.utcnow)
+    played_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 def init_db():
     Base.metadata.create_all(bind=engine)

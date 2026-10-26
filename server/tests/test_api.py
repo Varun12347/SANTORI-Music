@@ -9,6 +9,34 @@ def test_health():
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
+    assert data["database"] == "ok"
+
+def test_search_and_trending_and_lyrics():
+    # Test trending endpoint
+    res_trending = client.get("/api/trending?language=hindi")
+    assert res_trending.status_code == 200
+    trending_songs = res_trending.json()
+    assert isinstance(trending_songs, list)
+    assert len(trending_songs) > 0
+    assert "id" in trending_songs[0]
+    assert "title" in trending_songs[0]
+    assert "stream_url" in trending_songs[0]
+
+    # Test search endpoint
+    res_search = client.get("/api/search?q=Arijit&limit=3")
+    assert res_search.status_code == 200
+    search_results = res_search.json()
+    assert isinstance(search_results, list)
+    assert len(search_results) > 0
+    first_id = search_results[0]["id"]
+
+    # Test lyrics endpoint
+    res_lyrics = client.get(f"/api/lyrics/{first_id}")
+    assert res_lyrics.status_code == 200
+    lyrics_data = res_lyrics.json()
+    assert "lyrics" in lyrics_data
+    if lyrics_data["lyrics"]:
+        assert "<br>" not in lyrics_data["lyrics"]
 
 def test_playlists_crud():
     # 1. List playlists

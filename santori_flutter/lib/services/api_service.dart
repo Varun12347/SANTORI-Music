@@ -8,8 +8,10 @@ import '../models/playlist.dart';
 import '../models/track.dart';
 
 class ApiService {
-  static const String defaultProductionApiUrl = 'https://santori-music-api.onrender.com';
+  // Configurable production backend URL (can be overridden by --dart-define=API_URL=...)
+  static const String defaultProductionApiUrl = String.fromEnvironment('API_URL', defaultValue: '');
   static const String defaultAndroidLocalUrl = 'http://10.0.2.2:8000'; // Android emulator localhost
+  static const String defaultLocalUrl = 'http://127.0.0.1:8000';
   static const String _envBaseUrl = String.fromEnvironment('API_URL');
   static String? _customBaseUrl;
 
@@ -23,7 +25,17 @@ class ApiService {
     if (_envBaseUrl.isNotEmpty) {
       return _envBaseUrl.trim();
     }
-    return defaultProductionApiUrl;
+    if (defaultProductionApiUrl.isNotEmpty) {
+      return defaultProductionApiUrl.trim();
+    }
+    // Platform-aware defaults when no custom or remote URL is specified
+    if (kIsWeb) {
+      return defaultLocalUrl;
+    }
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return defaultAndroidLocalUrl;
+    }
+    return defaultLocalUrl;
   }
 
   static Future<bool> checkHealth() async {

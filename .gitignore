@@ -17,6 +17,7 @@ venv/
 
 # Node / Client
 node_modules/
+client/node_modules/
 client/dist/
 client/build/
 client/.next/
@@ -28,6 +29,9 @@ santori_flutter/.flutter-plugins
 santori_flutter/.flutter-plugins-dependencies
 santori_flutter/.packages
 santori_flutter/pubspec.lock
+**/Flutter/ephemeral/
+*.env*
+!*.env.example
 
 # IDE
 .idea/
