@@ -38,7 +38,7 @@ This client is a static React single-page application built with Vite. Netlify i
 1. Import this repository into Netlify.
 2. Set the **Base directory** to `client`, the **Build command** to `npm run build`, and the **Publish directory** to `dist`.
 3. Set the build environment variable `VITE_API_URL` to `https://santori-music.onrender.com`.
-4. In the Render backend service, set `FRONTEND_ORIGINS` to the exact deployed frontend origin, for example `https://your-site.netlify.app`. For a custom domain, list both origins separated by commas. Redeploy the backend after changing this setting.
+4. The backend allows the production site origin `https://aquamarine-taiyaki-1dd8e0.netlify.app` by default. In the Render backend service, set `FRONTEND_ORIGINS` to include any additional Netlify preview or custom-domain origins, separated by commas, then redeploy the backend.
 5. Deploy the frontend, then open the deployed site and verify that its home, search, and library views can reach the backend.
 
 `VITE_API_URL` is the backend origin; the client appends `/api` to API paths. The committed production environment file already supplies the Render URL, though the hosting environment variable can override it.

@@ -32,6 +32,22 @@ def test_cors_allows_local_frontend_but_not_arbitrary_origins():
     )
     assert "access-control-allow-origin" not in blocked_response.headers
 
+def test_cors_allows_production_netlify_origin():
+    origin = "https://aquamarine-taiyaki-1dd8e0.netlify.app"
+    preflight_response = client.options(
+        "/api/health",
+        headers={
+            "Origin": origin,
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert preflight_response.status_code == 200
+    assert preflight_response.headers["access-control-allow-origin"] == origin
+
+    response = client.get("/api/health", headers={"Origin": origin})
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == origin
+
 def test_search_and_trending_and_lyrics():
     # Test trending endpoint
     res_trending = client.get("/api/trending?language=hindi")

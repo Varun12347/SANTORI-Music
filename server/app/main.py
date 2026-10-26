@@ -27,6 +27,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
+production_frontend_origin = "https://aquamarine-taiyaki-1dd8e0.netlify.app"
 frontend_origins = [
     origin.strip().rstrip("/")
     for origin in os.getenv("FRONTEND_ORIGINS", "").split(",")
@@ -39,6 +40,8 @@ if not frontend_origins:
         "http://localhost:4173",
         "http://127.0.0.1:4173",
     ]
+if production_frontend_origin not in frontend_origins:
+    frontend_origins.append(production_frontend_origin)
 if "*" in frontend_origins:
     raise ValueError("FRONTEND_ORIGINS must contain explicit origins, not '*'.")
 
