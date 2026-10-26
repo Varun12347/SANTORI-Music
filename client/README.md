@@ -43,6 +43,6 @@ This client is a static React single-page application built with Vite. Netlify i
 
 `VITE_API_URL` is the backend origin; the client appends `/api` to API paths. The committed production environment file already supplies the Render URL, though the hosting environment variable can override it.
 
-Navigation currently switches views in React state and does not change the URL path, so no client-side routing rewrite is required. If path-based routes are added later, configure the host to serve `index.html` for unmatched paths (for Netlify, a `/* /index.html 200` redirect rule).
+The client uses lightweight URL-backed navigation for Home (`/`), Search (`/search`), Library (`/library`), and Now Playing (`/player`). The shared audio provider remains mounted across these views, so playback continues when navigating. Configure the host to serve `index.html` for unmatched paths (the root `netlify.toml` already includes the required `/* /index.html 200` redirect).
 
 For local development, run the backend at `http://127.0.0.1:8000` and start Vite with `npm run dev`; the API URL defaults to that local backend. The backend allows local Vite origins by default. Configure its `FRONTEND_ORIGINS` environment variable with explicit production origins; wildcard origins are rejected.

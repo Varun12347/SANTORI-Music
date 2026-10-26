@@ -1,10 +1,10 @@
 import React from 'react';
-import { Bookmark, Compass, Home, Library, Music, Sliders } from 'lucide-react';
+import { AudioLines, Bookmark, Compass, Home, Library, Music, Sliders } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { LISTENING_PROFILES } from '../../theme/tokens';
 import type { ListeningProfile } from '../../theme/tokens';
 
-export type PageView = 'home' | 'search' | 'library';
+export type PageView = 'home' | 'search' | 'library' | 'player';
 
 interface SidebarProps {
   currentPage: PageView;
@@ -27,6 +27,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'home' as PageView, label: 'Home', icon: Home },
     { id: 'search' as PageView, label: 'Search', icon: Compass },
     { id: 'library' as PageView, label: 'Your library', icon: Library },
+    { id: 'player' as PageView, label: 'Now playing', icon: AudioLines },
   ];
 
   return (

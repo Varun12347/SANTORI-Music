@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DeskSettingsDrawer } from './components/drawers/DeskSettingsDrawer';
 import { MobileNav } from './components/layout/MobileNav';
 import { PlayerBar } from './components/layout/PlayerBar';
@@ -9,10 +9,36 @@ import { ThemeProvider } from './context/ThemeContext';
 import { HomePage } from './pages/HomePage';
 import { LibraryPage } from './pages/LibraryPage';
 import { SearchPage } from './pages/SearchPage';
+import { NowPlayingPage } from './pages/NowPlayingPage';
+
+const PAGE_PATHS: Record<PageView, string> = {
+  home: '/',
+  search: '/search',
+  library: '/library',
+  player: '/player',
+};
+
+const pageFromPath = (): PageView => {
+  const path = window.location.pathname.replace(/\/+$/, '') || '/';
+  const match = (Object.entries(PAGE_PATHS) as [PageView, string][]).find(([, route]) => route === path);
+  return match?.[0] || 'home';
+};
 
 export const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<PageView>('home');
+  const [currentPage, setCurrentPage] = useState<PageView>(pageFromPath);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handlePopState = () => setCurrentPage(pageFromPath());
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigate = (page: PageView) => {
+    const path = PAGE_PATHS[page];
+    if (window.location.pathname !== path) window.history.pushState({}, '', path);
+    setCurrentPage(page);
+  };
 
   return (
     <ThemeProvider>
@@ -21,7 +47,7 @@ export const App: React.FC = () => {
           {/* Top Mobile Bar */}
           <MobileNav
             currentPage={currentPage}
-            onNavigate={setCurrentPage}
+            onNavigate={navigate}
             onOpenSettings={() => setIsSettingsOpen(true)}
           />
 
@@ -30,7 +56,7 @@ export const App: React.FC = () => {
             {/* Left Sidebar */}
             <Sidebar
               currentPage={currentPage}
-              onNavigate={setCurrentPage}
+              onNavigate={navigate}
               onOpenSettings={() => setIsSettingsOpen(true)}
             />
 
@@ -39,11 +65,12 @@ export const App: React.FC = () => {
               {currentPage === 'home' && <HomePage />}
               {currentPage === 'search' && <SearchPage />}
               {currentPage === 'library' && <LibraryPage />}
+              {currentPage === 'player' && <NowPlayingPage onBack={() => navigate('home')} />}
             </main>
           </div>
 
           {/* Fixed Bottom Player Bar */}
-          <PlayerBar />
+          <PlayerBar onOpenPlayer={() => navigate('player')} />
 
           {/* Desk Settings Slide-in Drawer */}
           <DeskSettingsDrawer

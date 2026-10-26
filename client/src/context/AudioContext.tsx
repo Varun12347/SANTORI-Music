@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { globalAudioEngine } from '../audio/synthEngine';
 import { API_BASE } from '../api';
 
@@ -22,6 +22,8 @@ export type RepeatMode = 'off' | 'all' | 'one';
 interface AudioContextType {
   currentTrack: Track | null;
   isPlaying: boolean;
+  isBuffering: boolean;
+  playbackError: string | null;
   currentTime: number;
   duration: number;
   volume: number;
@@ -46,48 +48,17 @@ interface AudioContextType {
 
 const AudioContext = createContext<AudioContextType | null>(null);
 
-const DEMO_QUEUE: Track[] = [
-  {
-    id: 'demo-1',
-    title: 'Paper Horizon',
-    artist: 'Folio Ensemble',
-    album: 'Acoustic Sheets',
-    duration: 195,
-    image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
-    hue: 215,
-    is_demo: true,
-  },
-  {
-    id: 'demo-2',
-    title: 'Graphite Echoes',
-    artist: 'Desk Quartet',
-    album: 'Ruled Notebook Vol. 1',
-    duration: 210,
-    image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=80',
-    hue: 140,
-    is_demo: true,
-  },
-  {
-    id: 'demo-3',
-    title: 'Ocean Midnight Tapes',
-    artist: 'SANTORI Waves',
-    album: 'Midnight Drifts',
-    duration: 240,
-    image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&auto=format&fit=crop&q=80',
-    hue: 195,
-    is_demo: true,
-  },
-];
-
 export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(DEMO_QUEUE[0]);
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [isBuffering, setIsBuffering] = useState<boolean>(false);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
-  const [duration, setDuration] = useState<number>(DEMO_QUEUE[0].duration || 180);
+  const [duration, setDuration] = useState<number>(0);
   const [volume, setVolumeState] = useState<number>(0.85);
   const [shuffle, setShuffle] = useState<boolean>(false);
   const [repeat, setRepeat] = useState<RepeatMode>('off');
-  const [queue, setQueue] = useState<Track[]>(DEMO_QUEUE);
+  const [queue, setQueue] = useState<Track[]>([]);
   const [likedIds, setLikedIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('folio_likes');
@@ -95,16 +66,17 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {
       // Ignored
     }
-    return ['demo-1'];
+    return [];
   });
-  const [likedTracks, setLikedTracks] = useState<Track[]>([DEMO_QUEUE[0]]);
-
-  const synthTimerRef = useRef<number | null>(null);
+  const [likedTracks, setLikedTracks] = useState<Track[]>([]);
+  const playRequestRef = useRef(0);
+  const nextTrackRef = useRef<() => void>(() => undefined);
 
   // Sync volume with audio engine
   const handleSetVolume = (vol: number) => {
-    setVolumeState(vol);
-    globalAudioEngine.setVolume(vol);
+    const nextVolume = Math.max(0, Math.min(1, vol));
+    setVolumeState(nextVolume);
+    globalAudioEngine.setVolume(nextVolume);
   };
 
   // HTML5 audio event bindings
@@ -114,83 +86,95 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const onTimeUpdate = () => {
       setCurrentTime(audioEl.currentTime);
-      if (audioEl.duration && !isNaN(audioEl.duration)) {
+      if (Number.isFinite(audioEl.duration)) {
         setDuration(audioEl.duration);
       }
     };
 
+    const onLoadedMetadata = () => {
+      if (Number.isFinite(audioEl.duration)) setDuration(audioEl.duration);
+      setIsBuffering(false);
+    };
+    const onWaiting = () => setIsBuffering(true);
+    const onCanPlay = () => setIsBuffering(false);
+    const onPlay = () => {
+      setIsPlaying(true);
+      setPlaybackError(null);
+    };
+    const onPause = () => setIsPlaying(false);
     const onEnded = () => {
       if (repeat === 'one') {
         audioEl.currentTime = 0;
-        audioEl.play();
+        audioEl.play().catch((error: unknown) => {
+          setIsPlaying(false);
+          setPlaybackError(error instanceof Error ? error.message : 'Unable to replay this track.');
+        });
       } else {
-        nextTrack();
+        nextTrackRef.current();
       }
     };
 
     const onError = () => {
-      console.warn('Audio playback error, falling back to synthesizer demo mode');
-      if (currentTrack) {
-        globalAudioEngine.startSynth(currentTrack.hue || 210);
-      }
+      setIsPlaying(false);
+      setIsBuffering(false);
+      setPlaybackError('This track could not be loaded. Try another song.');
     };
 
     audioEl.addEventListener('timeupdate', onTimeUpdate);
+    audioEl.addEventListener('loadedmetadata', onLoadedMetadata);
+    audioEl.addEventListener('waiting', onWaiting);
+    audioEl.addEventListener('canplay', onCanPlay);
+    audioEl.addEventListener('play', onPlay);
+    audioEl.addEventListener('pause', onPause);
     audioEl.addEventListener('ended', onEnded);
     audioEl.addEventListener('error', onError);
 
     return () => {
       audioEl.removeEventListener('timeupdate', onTimeUpdate);
+      audioEl.removeEventListener('loadedmetadata', onLoadedMetadata);
+      audioEl.removeEventListener('waiting', onWaiting);
+      audioEl.removeEventListener('canplay', onCanPlay);
+      audioEl.removeEventListener('play', onPlay);
+      audioEl.removeEventListener('pause', onPause);
       audioEl.removeEventListener('ended', onEnded);
       audioEl.removeEventListener('error', onError);
     };
-  }, [repeat, currentTrack]);
+  }, [repeat]);
 
-  // Handle synth time increments when playing a demo track
-  useEffect(() => {
-    if (isPlaying && currentTrack?.is_demo) {
-      synthTimerRef.current = window.setInterval(() => {
-        setCurrentTime((prev) => {
-          if (prev >= duration) {
-            if (repeat === 'one') return 0;
-            nextTrack();
-            return 0;
-          }
-          return prev + 1;
-        });
-      }, 1000);
-    } else {
-      if (synthTimerRef.current) {
-        clearInterval(synthTimerRef.current);
-        synthTimerRef.current = null;
-      }
-    }
-    return () => {
-      if (synthTimerRef.current) clearInterval(synthTimerRef.current);
-    };
-  }, [isPlaying, currentTrack, duration, repeat]);
-
-  const playTrack = (track: Track, newQueue?: Track[]) => {
+  const playTrack = useCallback((track: Track, newQueue?: Track[]) => {
+    const requestId = ++playRequestRef.current;
+    const streamUrl = track.stream_url || track.media_preview_url;
     setCurrentTrack(track);
     setCurrentTime(0);
-    setDuration(track.duration || 180);
-    setIsPlaying(true);
+    setDuration(track.duration || 0);
+    setPlaybackError(null);
+    setIsBuffering(Boolean(streamUrl));
+    setIsPlaying(false);
 
     if (newQueue) {
       setQueue(newQueue);
-    } else if (!queue.some((t) => t.id === track.id)) {
-      setQueue((prev) => [track, ...prev]);
+    } else {
+      setQueue((prev) => prev.some((queuedTrack) => queuedTrack.id === track.id) ? prev : [track, ...prev]);
     }
 
-    if (track.stream_url) {
-      globalAudioEngine.playStream(track.stream_url).catch((err) => {
-        console.warn('Stream play failed, switching to synthesizer:', err);
-        globalAudioEngine.startSynth(track.hue || 210);
+    if (streamUrl) {
+      globalAudioEngine.setVolume(volume);
+      globalAudioEngine.playStream(streamUrl).catch((error: unknown) => {
+        if (requestId !== playRequestRef.current) return;
+        setIsPlaying(false);
+        setIsBuffering(false);
+        setPlaybackError(
+          error instanceof Error && error.name === 'NotAllowedError'
+            ? 'Playback was blocked by your browser. Press play to try again.'
+            : 'This track could not be played. Try another song.',
+        );
       });
     } else {
-      globalAudioEngine.startSynth(track.hue || 210);
+      globalAudioEngine.pauseStream();
+      setIsBuffering(false);
+      setPlaybackError('A stream is not available for this track.');
     }
-  };
+  }, [volume]);
 
   const togglePlay = () => {
     if (!currentTrack) {
@@ -202,38 +186,54 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       globalAudioEngine.pauseStream();
       setIsPlaying(false);
     } else {
-      setIsPlaying(true);
-      if (currentTrack.stream_url) {
-        globalAudioEngine.playStream(currentTrack.stream_url, currentTime).catch(() => {
-          globalAudioEngine.startSynth(currentTrack.hue || 210);
+      const streamUrl = currentTrack.stream_url || currentTrack.media_preview_url;
+      if (streamUrl) {
+        setPlaybackError(null);
+        setIsBuffering(true);
+        globalAudioEngine.setVolume(volume);
+        globalAudioEngine.playStream(streamUrl, currentTime).catch((error: unknown) => {
+          setIsPlaying(false);
+          setIsBuffering(false);
+          setPlaybackError(
+            error instanceof Error && error.name === 'NotAllowedError'
+              ? 'Playback was blocked by your browser. Press play to try again.'
+              : 'This track could not be played. Try another song.',
+          );
         });
       } else {
-        globalAudioEngine.startSynth(currentTrack.hue || 210);
+        setPlaybackError('A stream is not available for this track.');
       }
     }
   };
 
-  const nextTrack = () => {
+  const nextTrack = useCallback(() => {
     if (queue.length === 0) return;
     const currentIndex = queue.findIndex((t) => t.id === currentTrack?.id);
-    let nextIndex = 0;
+    let nextIndex = currentIndex === -1 ? 0 : currentIndex + 1;
 
     if (shuffle) {
-      nextIndex = Math.floor(Math.random() * queue.length);
-    } else if (currentIndex !== -1) {
-      nextIndex = currentIndex + 1;
-      if (nextIndex >= queue.length) {
-        if (repeat === 'all') nextIndex = 0;
-        else {
-          setIsPlaying(false);
-          globalAudioEngine.pauseStream();
-          return;
-        }
+      const choices = queue.filter((track) => track.id !== currentTrack?.id);
+      if (choices.length > 0) {
+        playTrack(choices[Math.floor(Math.random() * choices.length)]);
+        return;
+      }
+    }
+
+    if (nextIndex >= queue.length) {
+      if (repeat === 'all') nextIndex = 0;
+      else {
+        setIsPlaying(false);
+        globalAudioEngine.pauseStream();
+        return;
       }
     }
 
     playTrack(queue[nextIndex]);
-  };
+  }, [queue, currentTrack, shuffle, repeat, playTrack]);
+
+  useEffect(() => {
+    nextTrackRef.current = nextTrack;
+  }, [nextTrack]);
 
   const prevTrack = () => {
     // If more than 3s in, restarts current track
@@ -244,19 +244,17 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (queue.length === 0) return;
     const currentIndex = queue.findIndex((t) => t.id === currentTrack?.id);
-    let prevIndex = queue.length - 1;
-
     if (currentIndex > 0) {
-      prevIndex = currentIndex - 1;
+      playTrack(queue[currentIndex - 1]);
+    } else if (currentIndex === 0 && repeat === 'all') {
+      playTrack(queue[queue.length - 1]);
     }
-    playTrack(queue[prevIndex]);
   };
 
   const seek = (time: number) => {
-    setCurrentTime(time);
-    if (currentTrack?.stream_url) {
-      globalAudioEngine.seekStream(time);
-    }
+    const nextTime = Math.max(0, Math.min(duration || time, time));
+    globalAudioEngine.seekStream(nextTime);
+    setCurrentTime(nextTime);
   };
 
   const toggleShuffle = () => setShuffle((prev) => !prev);
@@ -346,6 +344,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       value={{
         currentTrack,
         isPlaying,
+        isBuffering,
+        playbackError,
         currentTime,
         duration,
         volume,

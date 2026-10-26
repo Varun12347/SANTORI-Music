@@ -42,7 +42,7 @@ export const HomePage: React.FC = () => {
         <div className="flex items-center space-x-2">
           <Sparkles className="w-4 h-4 text-ink flex-shrink-0" />
           <span>
-            <strong>FOLIO & SANTORI Music:</strong> Real 320kbps audio streaming enabled with Web Audio demo synthesis fallback.
+            <strong>FOLIO & SANTORI Music:</strong> Stream real tracks from the Santori library and keep listening as you move between pages.
           </span>
         </div>
         <span className="font-mono text-[10px] text-muted hidden sm:inline">
@@ -116,7 +116,7 @@ export const HomePage: React.FC = () => {
                   </button>
 
                   <span className="text-xs text-muted font-mono">
-                    {currentTrack.is_demo ? 'Generated Tone' : '320kbps Stream'}
+                    {currentTrack.stream_url || currentTrack.media_preview_url ? 'Audio stream' : 'Stream unavailable'}
                   </span>
                 </div>
               </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Heart,
+  LoaderCircle,
   Moon,
   Pause,
   Play,
@@ -9,200 +10,181 @@ import {
   Shuffle,
   SkipBack,
   SkipForward,
-  Volume2,
-  VolumeX,
 } from 'lucide-react';
 import { useAudio } from '../../context/AudioContext';
 import { useTheme } from '../../context/ThemeContext';
 
-export const PlayerBar: React.FC = () => {
+interface PlayerBarProps {
+  onOpenPlayer: () => void;
+}
+
+const formatTime = (seconds: number) => {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+  const minutes = Math.floor(seconds / 60);
+  const remainder = Math.floor(seconds % 60);
+  return `${minutes}:${remainder.toString().padStart(2, '0')}`;
+};
+
+export const PlayerBar: React.FC<PlayerBarProps> = ({ onOpenPlayer }) => {
   const {
     currentTrack,
     isPlaying,
+    isBuffering,
     currentTime,
     duration,
-    volume,
     shuffle,
     repeat,
     togglePlay,
     nextTrack,
     prevTrack,
     seek,
-    setVolume,
     toggleShuffle,
     toggleRepeat,
     toggleLike,
     isLiked,
   } = useAudio();
-
   const { sleepRemainingSeconds } = useTheme();
 
-  const formatTime = (secs: number) => {
-    if (isNaN(secs) || secs < 0) return '0:00';
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  };
-
-  const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    seek(parseFloat(e.target.value));
-  };
-
-  const liked = currentTrack ? isLiked(currentTrack.id) : false;
-
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 perforated-bar h-20 px-4 md:px-6 flex items-center justify-between select-none">
-      {/* Left: Track Details */}
-      <div className="flex items-center space-x-3 w-1/4 min-w-[170px] max-w-[260px]">
-        {currentTrack ? (
-          <>
-            <div className="w-12 h-12 rounded-[2px] overflow-hidden bg-desk flex-shrink-0 shadow-sm relative">
-              {currentTrack.image ? (
-                <img
-                  src={currentTrack.image}
-                  alt={currentTrack.title}
-                  className="w-full h-full object-cover grayscale-[10%]"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center font-mono text-[9px] text-muted">
-                  FOLIO
-                </div>
-              )}
-            </div>
-            <div className="overflow-hidden pr-2">
-              <h4 className="font-serif font-semibold text-text text-sm truncate leading-tight">
-                {currentTrack.title}
-              </h4>
-              <p className="text-muted text-xs truncate mt-0.5">
-                {currentTrack.artist}
-              </p>
-              {currentTrack.is_demo ? (
-                <span className="text-[9px] font-mono text-muted/80 block mt-0.5">
-                  Demo tone
-                </span>
-              ) : null}
-            </div>
+    <div className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-t border-rule bg-paper px-3 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(0,0,0,0.12)] md:h-20 md:px-6 md:pb-0">
+      {currentTrack ? (
+        <>
+          <div className="flex min-w-0 flex-1 items-center gap-2.5 md:w-1/4 md:max-w-[260px] md:flex-none md:gap-3">
             <button
-              onClick={() => toggleLike(currentTrack)}
-              className={`p-1.5 rounded transition-transform active:scale-90 ${
-                liked ? 'text-stamp' : 'text-muted hover:text-ink'
-              }`}
-              title={liked ? 'Unlike track' : 'Like track'}
+              type="button"
+              onClick={onOpenPlayer}
+              className="flex min-w-0 flex-1 items-center gap-2.5 text-left md:gap-3"
+              aria-label={`Open player for ${currentTrack.title}`}
             >
-              <Heart className={`w-4 h-4 ${liked ? 'fill-current' : ''}`} />
+              <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-[3px] bg-paper2 shadow-sm md:h-12 md:w-12">
+                {currentTrack.image ? (
+                  <img src={currentTrack.image} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center text-muted">
+                    <Play className="h-4 w-4" />
+                  </span>
+                )}
+              </span>
+              <span className="min-w-0 flex-1 overflow-hidden">
+                <span className="block truncate font-serif text-sm font-semibold leading-tight text-text">
+                  {currentTrack.title}
+                </span>
+                <span className="mt-0.5 block truncate text-xs text-muted">{currentTrack.artist}</span>
+              </span>
             </button>
-          </>
-        ) : (
-          <div className="text-xs text-muted">No track loaded</div>
-        )}
-      </div>
-
-      {/* Center: Playback Controls & Real Seek Bar */}
-      <div className="flex flex-col items-center flex-1 max-w-xl px-2">
-        {/* Buttons */}
-        <div className="flex items-center space-x-4 mb-1">
-          {/* Shuffle (hidden on mobile) */}
-          <button
-            onClick={toggleShuffle}
-            className={`hidden sm:inline-flex p-1.5 rounded text-xs transition-colors ${
-              shuffle ? 'text-ink font-bold' : 'text-muted hover:text-ink'
-            }`}
-            title="Shuffle queue"
-          >
-            <Shuffle className="w-3.5 h-3.5" />
-          </button>
-
-          {/* Previous */}
-          <button
-            onClick={prevTrack}
-            className="p-1.5 rounded text-text hover:text-ink transition-transform active:scale-95"
-            title="Previous track (or restart)"
-          >
-            <SkipBack className="w-4 h-4" />
-          </button>
-
-          {/* Play / Pause Tactile Round Button */}
-          <button
-            onClick={togglePlay}
-            className="btn-tactile btn-round-tactile w-9 h-9 flex items-center justify-center shadow-md focus:outline-none"
-            title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
-          >
-            {isPlaying ? (
-              <Pause className="w-4 h-4 text-paper fill-current" />
-            ) : (
-              <Play className="w-4 h-4 text-paper fill-current ml-0.5" />
-            )}
-          </button>
-
-          {/* Next */}
-          <button
-            onClick={nextTrack}
-            className="p-1.5 rounded text-text hover:text-ink transition-transform active:scale-95"
-            title="Next track"
-          >
-            <SkipForward className="w-4 h-4" />
-          </button>
-
-          {/* Repeat (hidden on mobile) */}
-          <button
-            onClick={toggleRepeat}
-            className={`hidden sm:inline-flex p-1.5 rounded text-xs transition-colors ${
-              repeat !== 'off' ? 'text-ink font-bold' : 'text-muted hover:text-ink'
-            }`}
-            title={`Repeat: ${repeat}`}
-          >
-            {repeat === 'one' ? <Repeat1 className="w-3.5 h-3.5" /> : <Repeat className="w-3.5 h-3.5" />}
-          </button>
-        </div>
-
-        {/* Seek Bar & Timers */}
-        <div className="w-full flex items-center space-x-2 text-[11px] font-mono text-muted">
-          <span className="w-9 text-right select-none">{formatTime(currentTime)}</span>
-          <input
-            type="range"
-            min="0"
-            max={duration || 100}
-            step="0.5"
-            value={currentTime}
-            onChange={handleSeekChange}
-            className="flex-1 accent-ink h-1 cursor-pointer bg-rule/50 rounded"
-            aria-label="Seek track position"
-          />
-          <span className="w-9 text-left select-none">{formatTime(duration)}</span>
-        </div>
-      </div>
-
-      {/* Right: Volume & Sleep Timer Badge */}
-      <div className="flex items-center justify-end space-x-3 w-1/4 min-w-[140px] max-w-[220px]">
-        {sleepRemainingSeconds ? (
-          <div
-            className="hidden lg:flex items-center space-x-1 px-2 py-0.5 rounded bg-paper2 border border-rule/60 text-[10px] text-ink font-mono"
-            title="Sleep timer active"
-          >
-            <Moon className="w-3 h-3 text-ink" />
-            <span>{Math.ceil(sleepRemainingSeconds / 60)}m</span>
+            <button
+              type="button"
+              onClick={() => toggleLike(currentTrack)}
+              className={`hidden h-9 w-9 shrink-0 items-center justify-center rounded transition-colors md:inline-flex ${
+                isLiked(currentTrack.id) ? 'text-stamp' : 'text-muted hover:text-ink'
+              }`}
+              aria-label={isLiked(currentTrack.id) ? 'Unlike track' : 'Like track'}
+              title={isLiked(currentTrack.id) ? 'Unlike track' : 'Like track'}
+            >
+              <Heart
+                className={`h-4 w-4 ${isLiked(currentTrack.id) ? 'fill-current' : ''}`}
+              />
+            </button>
           </div>
-        ) : null}
 
-        <button
-          onClick={() => setVolume(volume > 0 ? 0 : 0.8)}
-          className="text-muted hover:text-ink p-1 rounded transition-colors"
-          title="Mute / Unmute"
-        >
-          {volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+          <div className="hidden max-w-xl flex-1 flex-col items-center px-2 md:flex">
+            <div className="mb-1 flex items-center gap-4">
+              <button
+                type="button"
+                onClick={toggleShuffle}
+                className={`rounded p-1.5 transition-colors ${shuffle ? 'text-ink' : 'text-muted hover:text-ink'}`}
+                title="Shuffle queue"
+                aria-label="Shuffle queue"
+                aria-pressed={shuffle}
+              >
+                <Shuffle className="h-4 w-4" />
+              </button>
+              <button type="button" onClick={prevTrack} className="rounded p-1.5 text-text hover:text-ink" title="Previous track" aria-label="Previous track">
+                <SkipBack className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={togglePlay}
+                className="btn-tactile btn-round-tactile flex h-9 w-9 items-center justify-center shadow-md"
+                title={isPlaying ? 'Pause' : 'Play'}
+                aria-label={isPlaying ? 'Pause' : 'Play'}
+              >
+                {isBuffering ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin text-paper" />
+                ) : isPlaying ? (
+                  <Pause className="h-4 w-4 fill-current text-paper" />
+                ) : (
+                  <Play className="ml-0.5 h-4 w-4 fill-current text-paper" />
+                )}
+              </button>
+              <button type="button" onClick={nextTrack} className="rounded p-1.5 text-text hover:text-ink" title="Next track" aria-label="Next track">
+                <SkipForward className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={toggleRepeat}
+                className={`rounded p-1.5 transition-colors ${repeat !== 'off' ? 'text-ink' : 'text-muted hover:text-ink'}`}
+                title={`Repeat: ${repeat}`}
+                aria-label={`Repeat ${repeat}`}
+              >
+                {repeat === 'one' ? <Repeat1 className="h-4 w-4" /> : <Repeat className="h-4 w-4" />}
+              </button>
+            </div>
+            <div className="flex w-full items-center gap-2 font-mono text-[10px] text-muted">
+              <span className="w-9 text-right">{formatTime(currentTime)}</span>
+              <input
+                type="range"
+                min={0}
+                max={duration || 1}
+                step={0.5}
+                value={Math.min(currentTime, duration || 0)}
+                onChange={(event) => seek(Number(event.target.value))}
+                disabled={duration <= 0}
+                className="h-4 flex-1 cursor-pointer accent-ink disabled:cursor-not-allowed"
+                aria-label="Seek track position"
+              />
+              <span className="w-9">{formatTime(duration)}</span>
+            </div>
+          </div>
+
+          <div className="hidden w-1/4 max-w-[220px] items-center justify-end gap-3 md:flex">
+            {sleepRemainingSeconds ? (
+              <span className="hidden items-center gap-1 rounded border border-rule/60 bg-paper2 px-2 py-0.5 font-mono text-[10px] text-ink lg:flex">
+                <Moon className="h-3 w-3" />
+                {Math.ceil(sleepRemainingSeconds / 60)}m
+              </span>
+            ) : null}
+          </div>
+
+          <div className="ml-2 flex shrink-0 items-center md:hidden">
+            <button
+              type="button"
+              onClick={togglePlay}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-ink active:bg-paper2"
+              aria-label={isPlaying ? 'Pause' : 'Play'}
+            >
+              {isBuffering ? (
+                <LoaderCircle className="h-5 w-5 animate-spin" />
+              ) : isPlaying ? (
+                <Pause className="h-5 w-5 fill-current" />
+              ) : (
+                <Play className="ml-0.5 h-5 w-5 fill-current" />
+              )}
+            </button>
+          </div>
+          <div
+            className="absolute bottom-0 left-0 h-[2px] bg-ink/20 md:hidden"
+            style={{ width: `${duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0}%` }}
+            aria-hidden="true"
+          >
+            <span className="block h-full bg-ink transition-[width] duration-200" />
+          </div>
+        </>
+      ) : (
+        <button type="button" onClick={onOpenPlayer} className="text-sm text-muted hover:text-ink">
+          Open player
         </button>
-
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.02"
-          value={volume}
-          onChange={(e) => setVolume(parseFloat(e.target.value))}
-          className="w-16 sm:w-20 accent-ink h-1 cursor-pointer bg-rule/50 rounded"
-          aria-label="Volume slider"
-        />
-      </div>
+      )}
     </div>
   );
 };

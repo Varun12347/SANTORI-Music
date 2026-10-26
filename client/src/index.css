@@ -159,6 +159,32 @@ body.is-dark .polaroid-tape {
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
 }
 
+.now-playing-page {
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(69, 95, 104, 0.44), transparent 55%),
+    linear-gradient(155deg, #191d1e 0%, #101213 55%, #171a1b 100%);
+}
+
+.now-playing-art {
+  position: relative;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.015));
+}
+
+.now-playing-range {
+  accent-color: #a8c7c2;
+  touch-action: pan-y;
+}
+
+.now-playing-range:focus-visible {
+  outline: 2px solid #a8c7c2;
+  outline-offset: 2px;
+}
+
+.now-playing-page button:focus-visible {
+  outline: 2px solid #a8c7c2;
+  outline-offset: 3px;
+}
+
 /* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   * {
