@@ -27,10 +27,24 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS configuration for client
+frontend_origins = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv("FRONTEND_ORIGINS", "").split(",")
+    if origin.strip()
+]
+if not frontend_origins:
+    frontend_origins = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:4173",
+        "http://127.0.0.1:4173",
+    ]
+if "*" in frontend_origins:
+    raise ValueError("FRONTEND_ORIGINS must contain explicit origins, not '*'.")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=frontend_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],

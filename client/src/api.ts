@@ -1,7 +1,12 @@
 /**
  * Centralised API base URL for the SANTORI Music React client.
- * - In production builds: set VITE_API_URL in .env.production or Netlify/Render env vars.
- * - In local dev: falls back to http://127.0.0.1:8000 (FastAPI dev server).
+ * VITE_API_URL is the backend origin; API paths add /api themselves.
  */
-const envUrl = (import.meta as { env?: Record<string, string> }).env?.VITE_API_URL ?? '';
-export const API_BASE = envUrl.trim() !== '' ? envUrl.trim() : 'http://127.0.0.1:8000';
+const configuredUrl = import.meta.env.VITE_API_URL?.trim();
+const defaultUrl = import.meta.env.PROD
+  ? 'https://santori-music.onrender.com'
+  : 'http://127.0.0.1:8000';
+
+export const API_BASE = (configuredUrl || defaultUrl)
+  .replace(/\/+$/, '')
+  .replace(/\/api$/i, '');

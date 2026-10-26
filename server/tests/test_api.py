@@ -13,6 +13,25 @@ def test_health():
     assert data["status"] == "ok"
     assert data["database"] == "ok"
 
+def test_cors_allows_local_frontend_but_not_arbitrary_origins():
+    allowed_response = client.options(
+        "/api/health",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert allowed_response.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+    blocked_response = client.options(
+        "/api/health",
+        headers={
+            "Origin": "https://untrusted.example",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert "access-control-allow-origin" not in blocked_response.headers
+
 def test_search_and_trending_and_lyrics():
     # Test trending endpoint
     res_trending = client.get("/api/trending?language=hindi")

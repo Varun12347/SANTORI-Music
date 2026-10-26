@@ -30,3 +30,19 @@ If you are developing a production application, we recommend enabling type-aware
 ```
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+
+## Production deployment
+
+This client is a static React single-page application built with Vite. Netlify is a suitable hosting option:
+
+1. Import this repository into Netlify.
+2. Set the **Base directory** to `client`, the **Build command** to `npm run build`, and the **Publish directory** to `dist`.
+3. Set the build environment variable `VITE_API_URL` to `https://santori-music.onrender.com`.
+4. In the Render backend service, set `FRONTEND_ORIGINS` to the exact deployed frontend origin, for example `https://your-site.netlify.app`. For a custom domain, list both origins separated by commas. Redeploy the backend after changing this setting.
+5. Deploy the frontend, then open the deployed site and verify that its home, search, and library views can reach the backend.
+
+`VITE_API_URL` is the backend origin; the client appends `/api` to API paths. The committed production environment file already supplies the Render URL, though the hosting environment variable can override it.
+
+Navigation currently switches views in React state and does not change the URL path, so no client-side routing rewrite is required. If path-based routes are added later, configure the host to serve `index.html` for unmatched paths (for Netlify, a `/* /index.html 200` redirect rule).
+
+For local development, run the backend at `http://127.0.0.1:8000` and start Vite with `npm run dev`; the API URL defaults to that local backend. The backend allows local Vite origins by default. Configure its `FRONTEND_ORIGINS` environment variable with explicit production origins; wildcard origins are rejected.
