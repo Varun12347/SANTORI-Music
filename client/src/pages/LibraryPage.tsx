@@ -3,6 +3,7 @@ import { FolderPlus, Heart, ListMusic, Play, Trash2 } from 'lucide-react';
 import { RubberStamp } from '../components/paper/RubberStamp';
 import { useAudio } from '../context/AudioContext';
 import type { Track } from '../context/AudioContext';
+import { API_BASE } from '../api';
 
 interface PlaylistData {
   id: number;
@@ -25,7 +26,7 @@ export const LibraryPage: React.FC = () => {
   }, []);
 
   const fetchPlaylists = () => {
-    fetch('http://127.0.0.1:8000/api/playlists')
+    fetch(`${API_BASE}/api/playlists`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => setPlaylists(data || []))
       .catch(() => {});
@@ -35,7 +36,7 @@ export const LibraryPage: React.FC = () => {
     e.preventDefault();
     if (!newPlaylistName.trim()) return;
 
-    fetch('http://127.0.0.1:8000/api/playlists', {
+    fetch(`${API_BASE}/api/playlists`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: newPlaylistName, description: newPlaylistDesc }),
@@ -51,7 +52,7 @@ export const LibraryPage: React.FC = () => {
   };
 
   const handleDeletePlaylist = (id: number) => {
-    fetch(`http://127.0.0.1:8000/api/playlists/${id}`, { method: 'DELETE' })
+    fetch(`${API_BASE}/api/playlists/${id}`, { method: 'DELETE' })
       .then(() => fetchPlaylists())
       .catch(() => {});
   };

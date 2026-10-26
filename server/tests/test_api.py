@@ -1,6 +1,8 @@
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))  # allows: from app.main import app
 import pytest
 from fastapi.testclient import TestClient
-from server.app.main import app
+from app.main import app
 
 client = TestClient(app)
 

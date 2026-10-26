@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { globalAudioEngine } from '../audio/synthEngine';
+import { API_BASE } from '../api';
 
 export interface Track {
   id: string;
@@ -277,12 +278,12 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       updatedIds = likedIds.filter((id) => id !== track.id);
       updatedTracks = likedTracks.filter((t) => t.id !== track.id);
       // Optional async delete to backend
-      fetch(`http://127.0.0.1:8000/api/likes/${track.id}`, { method: 'DELETE' }).catch(() => {});
+      fetch(`${API_BASE}/api/likes/${track.id}`, { method: 'DELETE' }).catch(() => {});
     } else {
       updatedIds = [...likedIds, track.id];
       updatedTracks = [track, ...likedTracks];
       // Sync like to backend
-      fetch('http://127.0.0.1:8000/api/likes', {
+      fetch(`${API_BASE}/api/likes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -8,6 +8,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
+!.env.production
 .pytest_cache/
 *.egg-info/
 dist/
@@ -32,6 +33,7 @@ santori_flutter/pubspec.lock
 **/Flutter/ephemeral/
 *.env*
 !*.env.example
+!*.env.production
 
 # IDE
 .idea/

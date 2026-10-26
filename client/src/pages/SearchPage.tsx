@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Heart, ListPlus, Play, Search, X } from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
 import type { Track } from '../context/AudioContext';
+import { API_BASE } from '../api';
 
 const GENRE_CHIPS = ['All genres', 'Hindi', 'Punjabi', 'English', 'Lofi', 'Acoustic', 'Indie', 'Pop'];
 
@@ -27,7 +28,7 @@ export const SearchPage: React.FC = () => {
   const fetchTracks = (searchQuery: string) => {
     setLoading(true);
     setSearched(true);
-    fetch(`http://127.0.0.1:8000/api/search?q=${encodeURIComponent(searchQuery)}&limit=24`)
+    fetch(`${API_BASE}/api/search?q=${encodeURIComponent(searchQuery)}&limit=24`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data: Track[]) => {
         setResults(data || []);

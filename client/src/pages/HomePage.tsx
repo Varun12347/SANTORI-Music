@@ -7,6 +7,7 @@ import { PaperVisualizer } from '../components/visualizer/PaperVisualizer';
 import { useAudio } from '../context/AudioContext';
 import type { Track } from '../context/AudioContext';
 import { useTheme } from '../context/ThemeContext';
+import { API_BASE } from '../api';
 
 export const HomePage: React.FC = () => {
   const { currentTrack, isPlaying, togglePlay, playTrack, queue, isLiked } = useAudio();
@@ -16,7 +17,7 @@ export const HomePage: React.FC = () => {
 
   // Fetch trending shelf tracks from our FastAPI backend (direct JioSaavn)
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/trending?language=hindi')
+    fetch(`${API_BASE}/api/trending?language=hindi`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data: Track[]) => {
         if (data && data.length > 0) {
